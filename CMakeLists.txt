@@ -2,35 +2,41 @@ cmake_minimum_required(VERSION 3.20)
 
 project(cs180_cuda LANGUAGES C CXX CUDA)
 
-find_package(CUDAToolkit REQUIRED)
-
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 set(CMAKE_CUDA_ARCHITECTURES 75 80 86 87 89 90 100 110 120)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
-if(ENABLE_CUDA_DEBUG)
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G")  # enable cuda-gdb (may significantly affect performance on some targets)
-else()
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo") # add line information to all builds for debug tools (exclusive to -G option)
-endif()
-
-# Source file
-file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
-  "./src/*.cpp"
-  "./src/*.hpp"
-  "./src/*.c"
-  "./src/*.h"
-  "./src/*.cu"
-)
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
-add_executable(cs180_cuda ${SRC})
+# Debug vs Release flags
+if(ENABLE_CUDA_DEBUG)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G")  # enables cuda-gdb
+else()
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo") # line info for profiling/debug
+endif()
 
+# Source Files
+file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/src/*.[ch]pp"
+    "${CMAKE_SOURCE_DIR}/src/*.[ch]"
+    "${CMAKE_SOURCE_DIR}/src/*.cu"
+)
+
+find_package(CUDAToolkit REQUIRED)
+find_package(CCCL REQUIRED)
+
+add_executable(cs180_cuda ${SRC})
+target_include_directories(cs180_cuda PRIVATE
+  $<BUILD_INTERFACE:${CUDAToolkit_INCLUDE_DIRS}/cuda/std>
+)
+target_link_libraries(cs180_cuda PRIVATE CUDA::cudart CUDA::cudart_static CCCL::CCCL)
 target_compile_options(cs180_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
 
-target_compile_features(cs180_cuda PRIVATE cxx_std_17 cuda_std_17)
-
-set_target_properties(cs180_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
-target_link_libraries(cs180_cuda PRIVATE CUDA::cudart)
+# Set C++23 for host and CUDA code
+set_target_properties(cs180_cuda PROPERTIES
+    CXX_STANDARD 23
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+    CUDA_STANDARD 20
+    CUDA_STANDARD_REQUIRED YES
+    CUDA_SEPARABLE_COMPILATION ON
+)
