@@ -7,9 +7,8 @@ __global__ void test() {
 
 int main() {
   // Launch kernel
-  test<<<1, 1>>>();
+  test<<<16, 1024>>>();
 
-  // Always check for errors and wait for the kernel to finish
   cudaError_t err = cudaDeviceSynchronize();
   if (err != cudaSuccess) {
     printf("CUDA error: %s\n", cudaGetErrorString(err));

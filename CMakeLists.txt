@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(cs180_cuda LANGUAGES C CXX CUDA)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CUDA_ARCHITECTURES 75 80 86 87 89 90 100 110 120)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
@@ -26,7 +27,8 @@ find_package(CCCL REQUIRED)
 
 add_executable(cs180_cuda ${SRC})
 target_include_directories(cs180_cuda PRIVATE
-  $<BUILD_INTERFACE:${CUDAToolkit_INCLUDE_DIRS}/cuda/std>
+    $<BUILD_INTERFACE:${CUDAToolkit_INCLUDE_DIRS}/cuda/std>
+    ${CCCL_INCLUDE_DIRS}
 )
 target_link_libraries(cs180_cuda PRIVATE CUDA::cudart CUDA::cudart_static CCCL::CCCL)
 target_compile_options(cs180_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
