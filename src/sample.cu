@@ -1,9 +1,9 @@
 #include <cstdio>
 #include <cuda_runtime.h>
 
-#include "device_info.cuh"
+#include "device_info.h"
 
-__global__ void VecAdd(int *A, int *B, int *C, int N) {
+__global__ void VecAddKernel(int *A, int *B, int *C, int N) {
   int i = blockDim.x * blockIdx.x + threadIdx.x;
   if (i < N) {
     C[i] = A[i] + B[i];
@@ -20,8 +20,7 @@ void print(int *arr, int N) {
 
 // this is a sample program that adds 2 really big vectors together into the C
 // vector
-int main() {
-  PrintDeviceInfo();
+int VecAdd() {
   int N = 48;
   size_t size = N * sizeof(int);
 
@@ -49,7 +48,7 @@ int main() {
   cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
 
   // Launch kernel
-  VecAdd<<<1024 * 1024 * 2, 1024>>>(d_A, d_B, d_C, N);
+  VecAddKernel<<<1024 * 1024 * 2, 1024>>>(d_A, d_B, d_C, N);
   cudaError_t err = cudaDeviceSynchronize();
   if (err != cudaSuccess) {
     printf("CUDA error: %s\n", cudaGetErrorString(err));

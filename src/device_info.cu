@@ -1,4 +1,4 @@
-#include "device_info.cuh"
+#include "device_info.h"
 
 #include <cstdio>
 #include <cuda_runtime.h>
