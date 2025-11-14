@@ -28,7 +28,11 @@ find_package(CCCL REQUIRED)
 add_executable(cs180_cuda ${SRC})
 target_link_libraries(cs180_cuda PRIVATE CCCL::CCCL CUDA::cudart CUDA::cudart_static)
 
-target_compile_options(cs180_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/std:c++20>)
+if (UNIX)
+	target_compile_options(cs180_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+else()
+	target_compile_options(cs180_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/std:c++20>)
+endif()
 
 # Set C++20 for host and CUDA code
 set_target_properties(cs180_cuda PROPERTIES
