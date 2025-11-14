@@ -26,16 +26,13 @@ find_package(CUDAToolkit REQUIRED)
 find_package(CCCL REQUIRED)
 
 add_executable(cs180_cuda ${SRC})
-target_include_directories(cs180_cuda PRIVATE
-    $<BUILD_INTERFACE:${CUDAToolkit_INCLUDE_DIRS}/cuda/std>
-    ${CCCL_INCLUDE_DIRS}
-)
-target_link_libraries(cs180_cuda PRIVATE CUDA::cudart CUDA::cudart_static CCCL::CCCL)
-target_compile_options(cs180_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+target_link_libraries(cs180_cuda PRIVATE CCCL::CCCL CUDA::cudart CUDA::cudart_static)
 
-# Set C++23 for host and CUDA code
+target_compile_options(cs180_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/std:c++20>)
+
+# Set C++20 for host and CUDA code
 set_target_properties(cs180_cuda PROPERTIES
-    CXX_STANDARD 23
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
     CUDA_STANDARD 20
