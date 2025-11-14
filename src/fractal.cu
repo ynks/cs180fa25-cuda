@@ -34,8 +34,8 @@ __global__ void FractalKernel(unsigned char *d_img, int width, int height,
 }
 
 void FractalGenerate() {
-  size_t width = 1024ull * 64*2;
-  size_t height = 1024ull * 64*2;
+  size_t width = 1024ull * 32;
+  size_t height = 1024ull * 32;
   size_t size = width * height;
   unsigned char *h_img = new unsigned char[size];
   if (!h_img) {
