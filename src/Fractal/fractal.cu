@@ -2,8 +2,7 @@
 #include <cstdio>
 #include <cuda_runtime.h>
 
-__global__ void FractalKernel(unsigned char *d_img, int width, int height,
-                              int offset) {
+__global__ void FractalKernel(unsigned char *d_img, int width, int height, int offset) {
 
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   int id = idx + offset;
