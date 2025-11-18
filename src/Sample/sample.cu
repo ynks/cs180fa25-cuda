@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 
 #include "device_info.h"
+#include "sample.h"
 
 __global__ void VecAddKernel(int *A, int *B, int *C, int N) {
   int i = blockDim.x * blockIdx.x + threadIdx.x;

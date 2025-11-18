@@ -7,7 +7,7 @@ file(GLOB_RECURSE COMMON_SOURCES CONFIGURE_DEPENDS
 
 add_library(Common ${COMMON_SOURCES})
 
-target_link_libraries(Common PUBLIC CUDA::cudart CCCL::CCCL )
+target_link_libraries(Common PUBLIC CUDA::cudart_static CCCL::CCCL )
 
 target_include_directories(Common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -16,6 +16,7 @@ set_target_properties(Common PROPERTIES
     CUDA_STANDARD 20
     CUDA_STANDARD_REQUIRED YES
     CUDA_SEPARABLE_COMPILATION ON
+    CUDA_RESOLVE_DEVICE_SYMBOLS ON
 )
 
 if(NOT DEFINED CUDA_EXTRA_FLAGS)

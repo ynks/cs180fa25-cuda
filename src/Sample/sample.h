@@ -8,4 +8,4 @@
 
 #pragma once
 
-void VecAdd();
+int VecAdd();

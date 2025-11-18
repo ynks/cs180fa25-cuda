@@ -8,8 +8,8 @@
 #include <cstring>
 
 __global__ void checkPasswordKernel(const char* words, int numWords, const char* target, int* found, char* result) {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	int totalCombinations = numWords * numWords;
+	long long idx = (long long)blockIdx.x * blockDim.x + threadIdx.x + (long long)blockIdx.y * 65535LL * blockDim.x;
+	long long totalCombinations = (long long)numWords * numWords;
 	
 	if (idx >= totalCombinations) return;
 	if (*found) return;
@@ -82,8 +82,8 @@ void from_list::StartKernel() {
 	
 	const char* target = "hello-world";
 	char* d_target;
-	cudaMalloc(&d_target, 7);
-	cudaMemcpy(d_target, target, 7, cudaMemcpyHostToDevice);
+	cudaMalloc(&d_target, 12);
+	cudaMemcpy(d_target, target, 12, cudaMemcpyHostToDevice);
 	
 	int* d_found;
 	cudaMalloc(&d_found, sizeof(int));
@@ -92,20 +92,31 @@ void from_list::StartKernel() {
 	char* d_result;
 	cudaMalloc(&d_result, 14);
 	
-	// Spawn 1 thread per word1-word2 possibility and compare it to a target we will pass here,
-	// 		if it's true it should stop checking the rest of the threads and select the winner
-	// 		for now on, we will just pass the target as a literal value parameter "value1"
-	// 		only pass the pointer to the vector of words, we will use the threads id to get
-	// 		the value from the vector
-	// 		We want to generate all unique possibilites (one of each thread) joining two of the words
-	// 		with a '-' character
+	// Spawn 1 thread per word1-word2 possibility and compare it to a target we will pass here
 	int numWords = words.size();
-	int totalCombinations = numWords * numWords;
+	long long totalCombinations = (long long)numWords * numWords;
 	int threadsPerBlock = 256;
-	int blocks = (totalCombinations + threadsPerBlock - 1) / threadsPerBlock;
+	long long blocks = (totalCombinations + threadsPerBlock - 1) / threadsPerBlock;
 	
-	checkPasswordKernel<<<blocks, threadsPerBlock>>>(d_words, numWords, d_target, d_found, d_result);
+	dim3 gridDim;
+	if (blocks <= 65535) {
+		gridDim = dim3(blocks, 1, 1);
+	} else {
+		gridDim.x = 65535;
+		gridDim.y = (blocks + 65534) / 65535;
+		if (gridDim.y > 65535) gridDim.y = 65535;
+		gridDim.z = 1;
+	}
+	
+	std::cout << "Launching kernel with " << gridDim.x << "x" << gridDim.y << " blocks, " << threadsPerBlock << " threads/block" << std::endl;
+	std::cout << "Total combinations: " << totalCombinations << std::endl;
+	
+	checkPasswordKernel<<<gridDim, threadsPerBlock>>>(d_words, numWords, d_target, d_found, d_result);
 	cudaDeviceSynchronize();
+	cudaError_t err = cudaGetLastError();
+	if (err != cudaSuccess) {
+		std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;
+	}
 	
 	int found;
 	cudaMemcpy(&found, d_found, sizeof(int), cudaMemcpyDeviceToHost);
