@@ -1,4 +1,4 @@
-#include "../Common/device_info.h"
+#include "device_info.h"
 #include "sample.h"
 
 int main() {

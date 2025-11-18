@@ -8,5 +8,4 @@
 
 #pragma once
 
-
 void PrintDeviceInfo();
