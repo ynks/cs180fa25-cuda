@@ -22,7 +22,7 @@ __global__ void FractalKernel(unsigned char *d_img, int width, int height,
   float realSqr = 0.0f;
   float imagSqr = 0.0f;
 
-  while ((realSqr + imagSqr) < 4.0f && i < 100000) {
+  while ((realSqr + imagSqr) < 4.0f && i < 255) {
     zImag = 2.0f * zReal * zImag + imag;
     zReal = realSqr - imagSqr + real;
     i++;
@@ -30,7 +30,7 @@ __global__ void FractalKernel(unsigned char *d_img, int width, int height,
     imagSqr = zImag * zImag;
   }
 
-  d_img[idx] = (unsigned char)(i > 255 ? 255 : i);
+  d_img[idx] = (unsigned char)(((float)i / 255) * 255.0f);
 }
 
 void FractalGenerate() {
