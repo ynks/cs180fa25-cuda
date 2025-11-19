@@ -106,7 +106,7 @@ void from_list::StartKernel() {
 	cudaMalloc(&d_words, words.size() * 6);
 	cudaMemcpy(d_words, words.data(), words.size() * 6, cudaMemcpyHostToDevice);
 	
-	const char* target = "world_Hello";
+	const char* target = "Password-Test";
 	char* d_target;
 	cudaMalloc(&d_target, 12);
 	cudaMemcpy(d_target, target, 12, cudaMemcpyHostToDevice);
