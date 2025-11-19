@@ -1,6 +1,5 @@
 
 #include "device_info.h"
-#include "password.h"
 #include "from_list.h"
 #include "common.h"
 #include "bruteforce.h"
