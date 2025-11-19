@@ -6,6 +6,18 @@
 
 namespace from_list {
 
-void StartKernel();
+struct Result {
+	bool found;
+	char password[100];
+	long long winnerThreadId;
+	int blocksX;
+	int blocksY;
+	int blocksZ;
+	int threadsPerBlock;
+	double elapsedTime;
+	long long totalAttempts;
+};
+
+Result StartKernel(const char* target);
 
 }

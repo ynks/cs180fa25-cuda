@@ -5,8 +5,9 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <cstring>
+#include <chrono>
 
-__global__ void checkCommonPasswordKernel(const char* passwords, const int* offsets, int numPasswords, const char* target, int* found, int* foundIdx) {
+__global__ void checkCommonPasswordKernel(const char* passwords, const int* offsets, int numPasswords, const char* target, int* found, int* foundIdx, long long* winnerThreadId) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	
 	if (idx >= numPasswords) return;
@@ -27,16 +28,19 @@ __global__ void checkCommonPasswordKernel(const char* passwords, const int* offs
 	if (match && password[i] == '\0' && target[i] == '\0') {
 		if (atomicCAS(found, 0, 1) == 0) {
 			*foundIdx = idx;
+			*winnerThreadId = (long long)blockIdx.x * blockDim.x + threadIdx.x;
 		}
 	}
 }
 
-void common::StartKernel() {
+common::Result common::StartKernel(const char* target) {
+	Result result = {false, "", -1, 0, 0, 0.0, 0};
+	auto startTime = std::chrono::high_resolution_clock::now();
+	
 	// Load every word from "dictionary.csv"
 	std::ifstream file("most_used.csv");
 	if (!file.is_open()) {
-		std::cerr << "Error: Could not open most_used.csv" << std::endl;
-		return;
+		return result;
 	}
 
 	// Put it on an std::vector<std::vector<char>>
@@ -57,8 +61,6 @@ void common::StartKernel() {
 	}
 	
 	file.close();
-	
-	std::cout << "Loaded " << passwords.size() << " passwords" << std::endl;
 
 	// Upload vector to CUDA memory
 	std::vector<int> offsets;
@@ -81,7 +83,6 @@ void common::StartKernel() {
 	cudaMalloc(&d_offsets, offsets.size() * sizeof(int));
 	cudaMemcpy(d_offsets, offsets.data(), offsets.size() * sizeof(int), cudaMemcpyHostToDevice);
 	
-	const char* target = "fuckyou12";
 	char* d_target;
 	cudaMalloc(&d_target, strlen(target) + 1);
 	cudaMemcpy(d_target, target, strlen(target) + 1, cudaMemcpyHostToDevice);
@@ -93,21 +94,22 @@ void common::StartKernel() {
 	int* d_foundIdx;
 	cudaMalloc(&d_foundIdx, sizeof(int));
 	
+	long long* d_winnerThreadId;
+	cudaMalloc(&d_winnerThreadId, sizeof(long long));
+	cudaMemset(d_winnerThreadId, -1, sizeof(long long));
+	
 	// Spawn 1 thread per word (list is 100k most used passwords) and string compare between that and a hardcoded target i pass to every thread as a parameter const char*
 	// If a thread finds it, it's selected as the winner thread and all other threads gets destroyed (similar to from_list.cu")
 	int numPasswords = passwords.size();
 	int threadsPerBlock = 256;
 	int blocks = (numPasswords + threadsPerBlock - 1) / threadsPerBlock;
 	
-	std::cout << "Launching kernel with " << blocks << " blocks, " << threadsPerBlock << " threads/block" << std::endl;
-	std::cout << "Total passwords: " << numPasswords << std::endl;
+	result.blocks = blocks;
+	result.threadsPerBlock = threadsPerBlock;
+	result.totalAttempts = numPasswords;
 	
-	checkCommonPasswordKernel<<<blocks, threadsPerBlock>>>(d_passwords, d_offsets, numPasswords, d_target, d_found, d_foundIdx);
+	checkCommonPasswordKernel<<<blocks, threadsPerBlock>>>(d_passwords, d_offsets, numPasswords, d_target, d_found, d_foundIdx, d_winnerThreadId);
 	cudaDeviceSynchronize();
-	cudaError_t err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;
-	}
 	
 	int found;
 	cudaMemcpy(&found, d_found, sizeof(int), cudaMemcpyDeviceToHost);
@@ -115,10 +117,15 @@ void common::StartKernel() {
 	if (found) {
 		int foundIdx;
 		cudaMemcpy(&foundIdx, d_foundIdx, sizeof(int), cudaMemcpyDeviceToHost);
-		std::cout << "Password found at index " << foundIdx << ": " << std::string(passwords[foundIdx].begin(), passwords[foundIdx].end() - 1) << std::endl;
-	} else {
-		std::cout << "Password not found" << std::endl;
+		cudaMemcpy(&result.winnerThreadId, d_winnerThreadId, sizeof(long long), cudaMemcpyDeviceToHost);
+		result.found = true;
+		std::string pwd(passwords[foundIdx].begin(), passwords[foundIdx].end() - 1);
+		strncpy(result.password, pwd.c_str(), 99);
+		result.password[99] = '\0';
 	}
+	
+	auto endTime = std::chrono::high_resolution_clock::now();
+	result.elapsedTime = std::chrono::duration<double>(endTime - startTime).count();
 	
 	delete[] flatPasswords;
 	cudaFree(d_passwords);
@@ -126,4 +133,7 @@ void common::StartKernel() {
 	cudaFree(d_target);
 	cudaFree(d_found);
 	cudaFree(d_foundIdx);
+	cudaFree(d_winnerThreadId);
+	
+	return result;
 }

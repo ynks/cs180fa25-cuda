@@ -1,14 +1,16 @@
 #include "bruteforce.h"
 #include <cstdio>
 #include <ctime>
+#include <cstring>
 #include <curand.h>
 #include <curand_kernel.h>
+#include <chrono>
 
 #define N 36ull
 
 namespace brute {
 
-__constant__ char password[] = "99999999";
+__device__ char d_password[100];
 
 __constant__ char characters[] = {
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
@@ -49,10 +51,11 @@ __device__ __forceinline__ void ToString(unsigned long long in, char *out) {
 }
 
 __device__ int stop_flag = 0;
+__device__ unsigned long long winner_thread_id = 0;
 
 __device__ inline bool should_stop() { return atomicAdd(&stop_flag, 0) != 0; }
 
-__global__ void Kernel(unsigned long long total) {
+__global__ void Kernel(unsigned long long total, int passwordLength) {
   unsigned long long tid = (blockIdx.x * blockDim.x) + threadIdx.x;
   unsigned long long stride = gridDim.x * blockDim.x;
 
@@ -66,43 +69,67 @@ __global__ void Kernel(unsigned long long total) {
     char string[9];
     ToString(i, string);
 
-    if (i % 100000000000 == 0) {
-      printf("Index %llu -> %.8s\n", i, string);
-    }
-
-    if (mem_compare(string, password, 8)) {
-      printf("Found Password Index %llu -> %.8s\n", i, string);
-      atomicExch(&stop_flag, 1);
+    if (mem_compare(string, d_password, passwordLength)) {
+      if (atomicCAS(&stop_flag, 0, 1) == 0) {
+        winner_thread_id = tid;
+      }
+      return;
     }
   }
 }
 
-__host__ void StartKernel() {
+__host__ Result StartKernel(const char* target, int maxLength) {
+  Result result = {false, "", 0, 0, 0, 0, 0, 0.0, 0};
+  
+  if (maxLength > 8 || maxLength < 1) {
+    maxLength = 8;
+  }
+  
+  int targetLen = strlen(target);
+  if (targetLen > maxLength) {
+    return result;
+  }
+  
+  char hostPassword[100] = {0};
+  strncpy(hostPassword, target, 99);
+  cudaMemcpyToSymbol(d_password, hostPassword, 100);
+  
+  int h_stop_flag = 0;
+  cudaMemcpyToSymbol(stop_flag, &h_stop_flag, sizeof(int));
+  
+  auto startTime = std::chrono::high_resolution_clock::now();
 
   dim3 threadsPerBlock(1024);
-
   dim3 numBlocks(36 * 16 * 16 * 16);
+  
+  result.blocksX = numBlocks.x;
+  result.blocksY = numBlocks.y;
+  result.blocksZ = numBlocks.z;
+  result.threadsPerBlock = threadsPerBlock.x;
 
-  unsigned long long totalThreads = threadsPerBlock.x;
-  totalThreads *= numBlocks.x;
-  totalThreads *= numBlocks.y;
-  totalThreads *= numBlocks.z;
+  unsigned long long totalPossibilities = 1;
+  for (int i = 0; i < targetLen; i++) {
+    totalPossibilities *= N;
+  }
+  
+  result.totalAttempts = totalPossibilities;
 
-  printf("Total Threads: %llu\n", totalThreads);
-  printf("Launching Kernel (Possibilities %llu)...\n", N * N * N * N * N * N * N * N);
-  fflush(stdout);
-
-  clock_t start = clock();
-  Kernel<<<numBlocks, threadsPerBlock>>>(N * N * N * N * N * N * N * N);
+  Kernel<<<numBlocks, threadsPerBlock>>>(totalPossibilities, targetLen);
   cudaDeviceSynchronize();
 
-  clock_t end = clock();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    printf("CUDA Error: %s\n", cudaGetErrorString(err));
+  int found_flag;
+  cudaMemcpyFromSymbol(&found_flag, stop_flag, sizeof(int));
+  
+  if (found_flag) {
+    result.found = true;
+    strncpy(result.password, target, 99);
+    result.password[99] = '\0';
+    cudaMemcpyFromSymbol(&result.winnerThreadId, winner_thread_id, sizeof(unsigned long long));
   }
-  double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
-  printf("Kernel time elapsed: %.6f seconds\n", elapsed);
-  printf("Done.\n");
+  
+  auto endTime = std::chrono::high_resolution_clock::now();
+  result.elapsedTime = std::chrono::duration<double>(endTime - startTime).count();
+  
+  return result;
 }
 } // namespace brute

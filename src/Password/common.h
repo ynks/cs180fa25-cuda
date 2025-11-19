@@ -6,6 +6,16 @@
 
 namespace common {
 
-void StartKernel();
+struct Result {
+	bool found;
+	char password[100];
+	long long winnerThreadId;
+	int blocks;
+	int threadsPerBlock;
+	double elapsedTime;
+	int totalAttempts;
+};
+
+Result StartKernel(const char* target);
 
 }

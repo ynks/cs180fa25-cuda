@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <cstring>
+#include <chrono>
 
 __device__ char toUpper(char c) {
 	if (c >= 'a' && c <= 'z') return c - 32;
@@ -73,12 +74,14 @@ __global__ void checkPasswordKernel(const char* words, int numWords, const char*
 	}
 }
 
-void from_list::StartKernel() {
+from_list::Result from_list::StartKernel(const char* target) {
+	Result result = {false, "", -1, 0, 0, 0, 0, 0.0, 0};
+	
+	auto startTime = std::chrono::high_resolution_clock::now();
 	// Load every word from "dictionary.csv"
 	std::ifstream file("dictionary.csv");
 	if (!file.is_open()) {
-		std::cerr << "Error: Could not open dictionary.csv" << std::endl;
-		return;
+		return result;
 	}
 	
 	// Put it on a std::vector<std::array<char,6>> (we know max size is 6, put empty characters as \0)
@@ -99,17 +102,14 @@ void from_list::StartKernel() {
 	
 	file.close();
 	
-	std::cout << "Loaded " << words.size() << " words" << std::endl;
-	
 	// Pass that to the CUDA global memory
 	char* d_words;
 	cudaMalloc(&d_words, words.size() * 6);
 	cudaMemcpy(d_words, words.data(), words.size() * 6, cudaMemcpyHostToDevice);
 	
-	const char* target = "Password-Test";
 	char* d_target;
-	cudaMalloc(&d_target, 12);
-	cudaMemcpy(d_target, target, 12, cudaMemcpyHostToDevice);
+	cudaMalloc(&d_target, strlen(target) + 1);
+	cudaMemcpy(d_target, target, strlen(target) + 1, cudaMemcpyHostToDevice);
 	
 	int* d_found;
 	cudaMalloc(&d_found, sizeof(int));
@@ -141,34 +141,36 @@ void from_list::StartKernel() {
 	}
 	
 	long long totalCombinations = totalWordPairs * 8;
-	std::cout << "Launching kernel with " << gridDim.x << "x" << gridDim.y << "x" << gridDim.z << " blocks, " << blockDim.x << "x" << blockDim.y << "x" << blockDim.z << " threads/block" << std::endl;
-	std::cout << "Total combinations: " << totalCombinations << std::endl;
+	
+	result.blocksX = gridDim.x;
+	result.blocksY = gridDim.y;
+	result.blocksZ = gridDim.z;
+	result.threadsPerBlock = threadsPerBlock;
+	result.totalAttempts = totalCombinations;
 	
 	checkPasswordKernel<<<gridDim, blockDim>>>(d_words, numWords, d_target, d_found, d_result, d_winnerThreadId);
 	cudaDeviceSynchronize();
-	cudaError_t err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;
-	}
 	
 	int found;
 	cudaMemcpy(&found, d_found, sizeof(int), cudaMemcpyDeviceToHost);
 	
 	if (found) {
-		char result[14];
-		long long winnerThreadId;
-		cudaMemcpy(result, d_result, 14, cudaMemcpyDeviceToHost);
-		cudaMemcpy(&winnerThreadId, d_winnerThreadId, sizeof(long long), cudaMemcpyDeviceToHost);
-		std::cout << "Password found: " << result << std::endl;
-		std::cout << "Winner thread ID: " << winnerThreadId << std::endl;
-	} else {
-		std::cout << "Password not found" << std::endl;
+		char pwd[14];
+		cudaMemcpy(pwd, d_result, 14, cudaMemcpyDeviceToHost);
+		cudaMemcpy(&result.winnerThreadId, d_winnerThreadId, sizeof(long long), cudaMemcpyDeviceToHost);
+		result.found = true;
+		strncpy(result.password, pwd, 99);
+		result.password[99] = '\0';
 	}
+	
+	auto endTime = std::chrono::high_resolution_clock::now();
+	result.elapsedTime = std::chrono::duration<double>(endTime - startTime).count();
 	
 	cudaFree(d_words);
 	cudaFree(d_target);
 	cudaFree(d_found);
 	cudaFree(d_result);
 	cudaFree(d_winnerThreadId);
+	
+	return result;
 }
-
