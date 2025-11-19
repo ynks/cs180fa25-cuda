@@ -1,11 +1,13 @@
 /**
- * @file password.h
+ * @file bruteforce.h
  * @author Dante Harper
  * @date 18/11/25
- *
- * @brief [TODO: Brief description of the file's purpose]
  */
 
 #pragma once
 
+namespace brute {
+
 void StartKernel();
+
+}
