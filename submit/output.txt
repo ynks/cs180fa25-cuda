@@ -1,0 +1,241 @@
+=== Device 0: NVIDIA GeForce RTX 4070 Laptop GPU ===
+Compute capability: 8.9
+Number of multiprocessors: 36
+Warp size: 32
+
+Max threads per block: 1024
+Max threads per multiprocessor: 1536
+Max threads dimension (block): (1024, 1024, 64)
+Max grid size: (2147483647, 65535, 65535)
+
+Concurrent kernels: Yes
+Async engine count: 2
+
+Registers per block: 65536
+Total global memory: 8.16 GB
+Shared memory per block: 48 KB
+Total constant memory: 64 KB
+L2 cache size: 32768 KB
+Memory bus width: 128 bits
+
+Can map host memory: Yes
+Unified addressing (UVA): Yes
+Managed memory supported: Yes
+ECC enabled: No
+
+
+================================================================
+                    PASSWORD CRACKING SUITE
+================================================================
+
+=== Test 1: (hello-World) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: FAILED
+Time: 0.294923 seconds
+
+--- Algorithm 2: English Dictionary ---
+Status: SUCCESS
+Password: hello-World
+Time: 0.729408 seconds
+Blocks: 65535x182x8
+Threads per Block: 256
+Total Attempts: 24294251592
+Winner Thread ID: 9725714306
+
+================================================================
+
+=== Test 2: (12345678) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: SUCCESS
+Password: 12345678
+Time: 0.110955 seconds
+Blocks: 377
+Threads per Block: 256
+Total Attempts: 96507
+Winner Thread ID: 5
+
+================================================================
+
+=== Test 3: (asdqwe12) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: SUCCESS
+Password: asdqwe12
+Time: 0.105978 seconds
+Blocks: 377
+Threads per Block: 256
+Total Attempts: 96507
+Winner Thread ID: 70827
+
+================================================================
+
+=== Test 4: (broken-String) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: FAILED
+Time: 0.082599 seconds
+
+--- Algorithm 2: English Dictionary ---
+Status: SUCCESS
+Password: broken-String
+Time: 0.614722 seconds
+Blocks: 65535x182x8
+Threads per Block: 256
+Total Attempts: 24294251592
+Winner Thread ID: 3134412722
+
+================================================================
+
+=== Test 5: (eix927sx) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: FAILED
+Time: 0.038164 seconds
+
+--- Algorithm 2: English Dictionary ---
+Status: FAILED
+Time: 1.943966 seconds
+
+--- Algorithm 3: Bruteforce ---
+Status: SUCCESS
+Password: eix927sx
+Time: 280.593917 seconds
+Blocks: 147456x1x1
+Threads per Block: 1024
+Total Attempts: 2821109907456
+Winner Thread ID: 104661076
+
+================================================================
+
+=== Test 6: (q91mbc) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: FAILED
+Time: 0.038980 seconds
+
+--- Algorithm 2: English Dictionary ---
+Status: FAILED
+Time: 1.947908 seconds
+
+--- Algorithm 3: Bruteforce ---
+Status: SUCCESS
+Password: q91mbc
+Time: 0.134270 seconds
+Blocks: 147456x1x1
+Threads per Block: 1024
+Total Attempts: 2176782336
+Winner Thread ID: 123208108
+
+================================================================
+
+=== Test 7: (rainy_day) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: FAILED
+Time: 0.037997 seconds
+
+--- Algorithm 2: English Dictionary ---
+Status: SUCCESS
+Password: rainy_day
+Time: 1.195198 seconds
+Blocks: 65535x182x8
+Threads per Block: 256
+Total Attempts: 24294251592
+Winner Thread ID: 16970410564
+
+================================================================
+
+=== Test 8: (ilovezach) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: SUCCESS
+Password: ilovezach
+Time: 0.037992 seconds
+Blocks: 377
+Threads per Block: 256
+Total Attempts: 96507
+Winner Thread ID: 95975
+
+================================================================
+
+=== Test 9: (minecraft) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: SUCCESS
+Password: minecraft
+Time: 0.037446 seconds
+Blocks: 377
+Threads per Block: 256
+Total Attempts: 96507
+Winner Thread ID: 1592
+
+================================================================
+
+=== Test 10: (mine-craft) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: FAILED
+Time: 0.037523 seconds
+
+--- Algorithm 2: English Dictionary ---
+Status: SUCCESS
+Password: mine-craft
+Time: 0.250172 seconds
+Blocks: 65535x182x8
+Threads per Block: 256
+Total Attempts: 24294251592
+Winner Thread ID: 13522906016
+
+================================================================
+
+=== Test 11: (bassboat) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: SUCCESS
+Password: bassboat
+Time: 0.037666 seconds
+Blocks: 377
+Threads per Block: 256
+Total Attempts: 96507
+Winner Thread ID: 95527
+
+================================================================
+
+=== Test 12: (Bass_boat) ===
+
+--- Algorithm 1: Common Passwords ---
+Status: FAILED
+Time: 0.037401 seconds
+
+--- Algorithm 2: English Dictionary ---
+Status: SUCCESS
+Password: Bass_boat
+Time: 1.740049 seconds
+Blocks: 65535x182x8
+Threads per Block: 256
+Total Attempts: 24294251592
+Winner Thread ID: 2001535815
+
+================================================================
+
+=== SUMMARY ===
+
+Total Tests: 12
+Total Successes: 12
+Total Failures: 0
+
+Common Passwords Algorithm:
+  Successes: 5
+  Failures: 7
+
+English Alphabet Algorithm:
+  Successes: 5
+  Failures: 2
+
+Bruteforce Algorithm:
+  Successes: 2
+  Failures: 0
+
+================================================================
